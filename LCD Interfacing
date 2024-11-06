@@ -1,0 +1,202 @@
+library IEEE; 
+use IEEE.STD_LOGIC_1164.ALL; 
+use IEEE.STD_LOGIC_ARITH.ALL; 
+use IEEE.STD_LOGIC_UNSIGNED.ALL;
+entity LCD_interface is 
+ Port ( 
+ rst : in std_logic; 
+ clk : in std_logic; 
+ RS : out std_logic; 
+ RW : out std_logic; 
+ EN : out std_logic; 
+ LCD : out std_logic_vector(7 downto 0)
+ ); 
+end LCD_interface; 
+architecture arch_LCD_interface of LCD_interface is 
+ signal count: integer range 0 to 47; 
+ signal clock: std_logic; 
+ signal flag : std_logic := '0'; 
+begin 
+ -- Clock divider to slow down the clock
+ process(rst, clk) 
+ variable temp: integer range 0 to 999999; 
+ begin 
+ if (rst = '0') then 
+ temp := 0; 
+ clock <= '0'; 
+ elsif (clk'event and clk = '1') then 
+ temp := temp + 1; 
+ if (temp = 250000) then 
+ clock <= not clock; 
+ temp := 0; 
+ end if; 
+ end if; 
+ end process; 
+ -- Counter to go through the stages of LCD writing 
+ process(rst, clock) 
+ begin 
+ if (rst = '0') then 
+ count <= 0; 
+ elsif (rising_edge(clock)) then 
+ if (count < 47 and flag = '0') then 
+ count <= count + 1; 
+ end if;
+ end if; 
+ end process; 
+ -- Process to allocate output on counter values and write on LCD in HEX format 
+ process(count, rst, clock) 
+ begin 
+ if (rst = '0') then 
+ RW <= '0'; 
+ RS <= '0'; 
+ EN <= '0'; 
+ LCD <= (others => '0'); 
+ flag <= '0'; 
+ elsif (rising_edge(clock)) then 
+ case count is 
+ when 0 => 
+ RW <= '0'; 
+ EN <= '0'; 
+ when 1 => 
+ RW <= '0'; 
+ EN <= '0'; 
+ when 2 => 
+ RW <= '0'; 
+ when 3 => 
+ EN <= '0'; 
+ when 4 => 
+ RW <= '0'; 
+ when 5 => 
+ EN <= '0'; 
+ when 6 => 
+ RW <= '0'; 
+ RS <= '0'; 
+ LCD <= x"38"; -- init in 2 line mode 
+ EN <= '1'; 
+ when 7 => 
+ EN <= '0'; 
+ when 8 => 
+ RW <= '0'; 
+ when 9 => 
+ EN <= '0'; 
+ when 10 => 
+ RW <= '0'; 
+ EN <= '0'; 
+ when 11 => 
+ RW <= '0'; 
+ when 12 => 
+ EN <= '0'; 
+ when 13 => 
+ RW <= '0'; 
+ when 14 => 
+ EN <= '0'; 
+ RS <= '0'; 
+ LCD <= x"81"; -- set cursor to 1st line, 2nd position 
+ EN <= '1'; 
+ when 15 => 
+ RS <= '1'; 
+ LCD <= x"4A"; -- J 
+ EN <= '1'; 
+ when 16 => 
+ RS <= '1'; 
+ LCD <= x"53"; -- S 
+ EN <= '1'; 
+ when 17 => 
+ RS <= '1'; 
+ LCD <= x"50"; -- P 
+ EN <= '1'; 
+ when 18 => 
+ RS <= '1'; 
+ LCD <= x"4D"; -- M 
+ EN <= '1'; 
+ when 19 => 
+ RS <= '1'; 
+ LCD <= x"20"; -- space 
+ EN <= '1'; 
+ when 20 => 
+ RS <= '1'; 
+ LCD <= x"47"; -- G 
+ EN <= '1'; 
+ when 21 => 
+ RS <= '1'; 
+ LCD <= x"52"; -- R 
+ EN <= '1'; 
+ when 22 => 
+ RS <= '1'; 
+ LCD <= x"4F"; -- O 
+ EN <= '1'; 
+ when 23 => 
+ RS <= '1'; 
+ LCD <= x"55"; -- U 
+ EN <= '1'; 
+ when 24 => 
+ RS <= '1'; 
+ LCD <= x"50"; -- P 
+ EN <= '1'; 
+ when 25 => 
+ RS <= '1'; 
+ LCD <= x"20"; -- space 
+ EN <= '1'; 
+ when 26 => 
+ RS <= '1'; 
+ LCD <= x"20"; -- space 
+ EN <= '1'; 
+ when 27 => 
+ RS <= '1'; 
+ LCD <= x"20"; -- space 
+ EN <= '1'; 
+ when 28 => 
+ RS <= '1'; 
+ LCD <= x"20"; -- space 
+ EN <= '1'; 
+ when 29 => 
+ RS <= '0'; 
+ LCD <= x"C6"; -- 2nd line 
+ EN <= '1'; 
+ when 30 => 
+ RS <= '1'; 
+ LCD <= x"50"; -- P 
+ EN <= '1'; 
+ when 31 => 
+ RS <= '1'; 
+ LCD <= x"55"; -- U 
+ EN <= '1'; 
+ when 32 => 
+ RS <= '1'; 
+ LCD <= x"4E"; -- N 
+ EN <= '1'; 
+ when 33 => 
+ RS <= '1'; 
+ LCD <= x"45"; -- E 
+ EN <= '1'; 
+ when 34 => 
+ flag <= '1'; 
+ when others => 
+ null; -- No action 
+ end case; 
+ end if; 
+ end process; 
+end arch_LCD_interface;
+
+
+
+
+UCF FILE
+
+# Clock pin for FPGA Board
+NET "clk" LOC = "P56"; # Bank = 0, Signal name = MCLK 
+NET "rst" LOC = "P22"; # Bank = 2, Signal name = Reset 
+NET "rst" CLOCK_DEDICATED_ROUTE = FALSE; 
+# Pins connected to LCD data
+NET "LCD[0]" LOC = "P85"; 
+NET "LCD[1]" LOC = "P82"; 
+NET "LCD[2]" LOC = "P83"; 
+NET "LCD[3]" LOC = "P80"; 
+NET "LCD[4]" LOC = "P81"; 
+NET "LCD[5]" LOC = "P78"; 
+NET "LCD[6]" LOC = "P79"; 
+NET "LCD[7]" LOC = "P74"; 
+# Control lines for LCD
+NET "RS" LOC = "P88"; 
+NET "EN" LOC = "P84"; 
+NET "RW" LOC = "P2";
